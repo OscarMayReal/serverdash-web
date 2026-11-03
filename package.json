@@ -1,14 +1,6 @@
 {
   "name": "serverdash",
   "version": "0.0.1",
-  "private": true,
-  "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "lint": "turbo lint",
-    "format": "turbo format",
-    "typecheck": "turbo typecheck"
-  },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
@@ -17,12 +9,27 @@
     "turbo": "^2.11.10",
     "typescript": "^5"
   },
-  "packageManager": "bun@1.4.3",
   "engines": {
     "node": ">=20.9.0"
+  },
+  "packageManager": "bun@1.4.3",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "format": "turbo format",
+    "typecheck": "turbo typecheck"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
+  ],
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.5",
+    "node-linux-pam": "^0.2.1"
+  },
+  "trustedDependencies": [
+    "node-linux-pam"
   ]
 }
