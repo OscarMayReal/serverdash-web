@@ -32,14 +32,14 @@ import React from "react"
 export default function DashboardLayout({children}: {children: React.JSX.Element}) {
     return <SidebarProvider>
         <Sidebar>
-            <SidebarHeader className="p-0 h-[50px] items-center flex flex-row">
+            <SidebarHeader className="p-0 h-[60px] items-center flex flex-row">
                 <Button size="icon-sm" variant="ghost" className="ml-auto mr-0">
                     <UserIcon />
                 </Button>
                 <SidebarTrigger className="mr-3" />
             </SidebarHeader>
             <SidebarContent>
-                <SidebarGroup>
+                <SidebarGroup className="pt-0">
                     <SidebarGroupLabel>Navigation</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenuButton><HomeIcon />Home</SidebarMenuButton>
