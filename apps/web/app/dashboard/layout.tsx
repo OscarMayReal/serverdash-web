@@ -1,7 +1,9 @@
+"use client"
 import { Button } from "@workspace/ui/components/button"
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@workspace/ui/components/sidebar"
 import { ContainerIcon, FolderIcon, HomeIcon, MonitorIcon, PlayIcon, SettingsIcon, TerminalIcon, UserIcon } from "lucide-react"
 import React from "react"
+import {usePathname, useRouter} from "next/navigation"
 
 // export default function DashboardLayout({children}: {children: React.JSX.Element}) {
 //     return <div>
@@ -30,6 +32,8 @@ import React from "react"
 // }
 
 export default function DashboardLayout({children}: {children: React.JSX.Element}) {
+    const router = useRouter()
+    const pathname = usePathname()
     return <SidebarProvider>
         <Sidebar>
             <SidebarHeader className="p-0 h-[60px] items-center flex flex-row">
@@ -42,10 +46,10 @@ export default function DashboardLayout({children}: {children: React.JSX.Element
                 <SidebarGroup className="pt-0">
                     <SidebarGroupLabel>Navigation</SidebarGroupLabel>
                     <SidebarGroupContent>
-                        <SidebarMenuButton><HomeIcon />Home</SidebarMenuButton>
+                        <SidebarMenuButton isActive={pathname == "/dashboard"} onClick={() => router.push("/dashboard")}><HomeIcon />Home</SidebarMenuButton>
                         <SidebarMenuButton><SettingsIcon />Admin</SidebarMenuButton>
                         <SidebarMenuButton><TerminalIcon />Terminal</SidebarMenuButton>
-                        <SidebarMenuButton><FolderIcon />Files</SidebarMenuButton>
+                        <SidebarMenuButton isActive={pathname == "/dashboard/files"} onClick={() => router.push("/dashboard/files")}><FolderIcon />Files</SidebarMenuButton>
                         <SidebarMenuButton><PlayIcon />Media</SidebarMenuButton>
                         <SidebarMenuButton><ContainerIcon />Containers</SidebarMenuButton>
                         <SidebarMenuButton><MonitorIcon />Virtualisation</SidebarMenuButton>

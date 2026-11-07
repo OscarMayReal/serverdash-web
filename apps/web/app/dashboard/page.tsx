@@ -1,31 +1,89 @@
-import { ContainerIcon, FolderIcon, MonitorIcon, PlayIcon, ShieldIcon, TerminalIcon } from "lucide-react"
+"use client"
+import { trpc } from "@/trpc/client"
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@workspace/ui/components/item"
+import { ClockIcon, CpuIcon, MemoryStick, NetworkIcon } from "lucide-react"
+import { useEffect } from "react";
 
-export default function DashboardHome() {
-    return <div className="flex flex-col h-full w-full">
-        <div className="p-4 pt-2 w-full bg-primary text-primary-foreground">
-            <h1 className="text-3xl font-light">
-                Hostname: Home
-            </h1>
-        </div>
-            <div className="flex flex-col p-6 gap-4">
-                <h2 className="text-2xl">Quick Access</h2>
-                <div className="flex flex-row gap-2">
-                    <AppItemTile className="bg-neutral-700 hover:bg-neutral-700/80" Icon={ShieldIcon} name="Admin" />
-                    <AppItemTile className="bg-neutral-700 hover:bg-neutral-700/80" Icon={TerminalIcon} name="Terminal" />
-                    <AppItemTile Icon={FolderIcon} name="Files" />
-                    <AppItemTile Icon={PlayIcon} name="Media" />
-                    <AppItemTile Icon={ContainerIcon} name="Containers" />
-                    <AppItemTile Icon={MonitorIcon} name="Virtualisation" />
-                </div>
-            </div>
-    </div>
+function formatSeconds(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  // Pads single digits with a leading zero
+  return [hours, minutes, seconds]
+    .map(val => String(val).padStart(2, '0'))
+    .join(':');
 }
 
-function AppItemTile({className, Icon, name}: {className?: string, Icon: React.JSX.ElementType, name}) {
-    return <div className="bg-black">
-        <div className={`w-[125px] h-[125px] ${className || "bg-primary hover:bg-primary/80"} relative`}>
-            <Icon size={35} className="text-white absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%]" strokeWidth="1.5" />
-            <div className="text-white absolute bottom-1 left-2.5">{name}</div>
+export function convertBytes(
+  bytes: number,
+  options: { useBinaryUnits?: boolean; decimals?: number } = {}
+): string {
+  const { useBinaryUnits = false, decimals = 2 } = options;
+
+  if (decimals < 0) {
+    throw new Error(`Invalid decimals ${decimals}`);
+  }
+
+  const base = useBinaryUnits ? 1024 : 1000;
+  const units = useBinaryUnits
+    ? ["Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
+    : ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+
+  if (bytes === 0) return `0 ${units[0]}`;
+
+  const i = Math.floor(Math.log(bytes) / Math.log(base));
+
+  return `${(bytes / Math.pow(base, i)).toFixed(decimals)} ${units[i]}`;
+}
+
+
+export default function ServerPage() {
+    const hostname = trpc.infoRouter.hostname.useQuery()
+    const osInfo = trpc.infoRouter.osInfo.useQuery()
+    useEffect(() => {
+        const interval = setInterval(() => {
+            osInfo.refetch()
+        }, 1000)
+        return () => {
+            clearInterval(interval)
+        }
+    }, [])
+    if (!hostname.isFetched) {
+        return null
+    }
+    return <div className="flex flex-col w-full h-full p-6">
+        <h1 className="text-2xl flex flex-row items-center">
+            {hostname.data} <div className="text-sm ml-3">Running {osInfo.data?.osPlatform} {osInfo.data?.osRelease}</div>
+        </h1>
+        <div className="flex flex-row w-full pt-4 gap-4">
+            <Item variant={"outline"}>
+                <ItemMedia variant="icon">
+                    <ClockIcon />
+                </ItemMedia>
+                <ItemContent>
+                    <ItemTitle>Uptime</ItemTitle>
+                    <ItemDescription>{formatSeconds(osInfo.data?.uptime)}</ItemDescription>
+                </ItemContent>
+            </Item>
+            <Item variant={"outline"}>
+                <ItemMedia variant="icon">
+                    <CpuIcon />
+                </ItemMedia>
+                <ItemContent>
+                    <ItemTitle>CPU Temprature</ItemTitle>
+                    <ItemDescription>{osInfo.data?.sysinfoCpuTemperature.main}°C</ItemDescription>
+                </ItemContent>
+            </Item>
+            <Item variant={"outline"}>
+                <ItemMedia variant="icon">
+                    <MemoryStick />
+                </ItemMedia>
+                <ItemContent>
+                    <ItemTitle>Memory Usage</ItemTitle>
+                    <ItemDescription>{convertBytes(osInfo.data?.sysinfoMem.used)}/{convertBytes(osInfo.data?.sysinfoMem.total)}</ItemDescription>
+                </ItemContent>
+            </Item>
         </div>
     </div>
 }
