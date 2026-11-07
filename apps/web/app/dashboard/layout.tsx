@@ -1,5 +1,6 @@
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from "@workspace/ui/components/sidebar"
-import { ContainerIcon, FolderIcon, HomeIcon, MonitorIcon, PlayIcon, SettingsIcon, TerminalIcon } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@workspace/ui/components/sidebar"
+import { ContainerIcon, FolderIcon, HomeIcon, MonitorIcon, PlayIcon, SettingsIcon, TerminalIcon, UserIcon } from "lucide-react"
 import React from "react"
 
 // export default function DashboardLayout({children}: {children: React.JSX.Element}) {
@@ -31,6 +32,12 @@ import React from "react"
 export default function DashboardLayout({children}: {children: React.JSX.Element}) {
     return <SidebarProvider>
         <Sidebar>
+            <SidebarHeader className="p-0 h-[50px] items-center flex flex-row">
+                <Button size="icon-sm" variant="ghost" className="ml-auto mr-0">
+                    <UserIcon />
+                </Button>
+                <SidebarTrigger className="mr-3" />
+            </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel>Navigation</SidebarGroupLabel>
