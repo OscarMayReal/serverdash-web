@@ -14,7 +14,8 @@
     "@trpc/server": "^11.23.0",
     "@types/bun": "^1.4.4",
     "systeminformation": "^5.33.19",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "node-linux-pam": "^0.2.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
@@ -23,6 +24,7 @@
     "typescript": "^5"
   },
   "exports": {
-    "./router": "./src/router.ts"
+    "./router": "./src/router.ts",
+    "./auth": "./src/auth.ts"
   }
 }

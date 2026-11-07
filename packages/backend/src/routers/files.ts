@@ -1,13 +1,11 @@
-import { initTRPC } from "@trpc/server"
+import { protectedProcedure as procedure, t } from "../trpc.js"
 import z from "zod"
 import fs from "node:fs/promises"
 import { Stats } from "node:fs"
 import path from "node:path"
 
-const t = initTRPC.create()
-
 export const filesRouter = t.router({
-    ls: t.procedure
+    ls: procedure
         .input(z.object({path: z.string().optional()}))
         .query(async (opts) => {
             const requestedPath = opts.input.path || "."
@@ -20,7 +18,7 @@ export const filesRouter = t.router({
             }
             return newFiles
         }),
-    rm: t.procedure
+    rm: procedure
         .input(z.object({path: z.string()}))
         .mutation(async (opts) => {
             try {
@@ -30,7 +28,7 @@ export const filesRouter = t.router({
                 return {success: false}
             }
         }),
-    copy: t.procedure
+    copy: procedure
         .input(z.object({sourcePath: z.string(), destinationPath: z.string()}))
         .mutation(async (opts) => {
             const source = path.resolve(opts.input.sourcePath)
@@ -41,7 +39,7 @@ export const filesRouter = t.router({
             await fs.cp(source, destination, {recursive: true, force: false, errorOnExist: true})
             return {success: true}
         }),
-    download: t.procedure
+    download: procedure
         .input(z.object({path: z.string()}))
         .query(async (opts) => {
             const file = await fs.readFile(opts.input.path)
@@ -50,7 +48,7 @@ export const filesRouter = t.router({
                 data: file.toString("base64"),
             }
         }),
-    upload: t.procedure
+    upload: procedure
         .input(z.object({path: z.string(), fileName: z.string().min(1), data: z.string()}))
         .mutation(async (opts) => {
             const safeFileName = path.basename(opts.input.fileName)

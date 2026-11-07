@@ -4,7 +4,8 @@ import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@works
 import { ClockIcon, CpuIcon, MemoryStick, NetworkIcon } from "lucide-react"
 import { useEffect } from "react";
 
-function formatSeconds(totalSeconds: number) {
+function formatSeconds(totalSeconds: number | undefined) {
+  if (totalSeconds === undefined || !Number.isFinite(totalSeconds)) return "Loading…";
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
@@ -16,9 +17,10 @@ function formatSeconds(totalSeconds: number) {
 }
 
 export function convertBytes(
-  bytes: number,
+  bytes: number | undefined,
   options: { useBinaryUnits?: boolean; decimals?: number } = {}
 ): string {
+  if (bytes === undefined || !Number.isFinite(bytes)) return "Loading…";
   const { useBinaryUnits = false, decimals = 2 } = options;
 
   if (decimals < 0) {
@@ -41,6 +43,7 @@ export function convertBytes(
 export default function ServerPage() {
     const hostname = trpc.infoRouter.hostname.useQuery()
     const osInfo = trpc.infoRouter.osInfo.useQuery()
+    const user = trpc.authRouter.me.useQuery()
     useEffect(() => {
         const interval = setInterval(() => {
             osInfo.refetch()
@@ -49,12 +52,15 @@ export default function ServerPage() {
             clearInterval(interval)
         }
     }, [])
-    if (!hostname.isFetched) {
-        return null
+    if (hostname.isPending) {
+        return <div role="status" className="p-6">Loading server information…</div>
+    }
+    if (hostname.isError) {
+        return <div role="alert" className="p-6 text-destructive">Unable to load server information: {hostname.error.message}</div>
     }
     return <div className="flex flex-col w-full h-full p-6">
         <h1 className="text-2xl flex flex-row items-center">
-            {hostname.data} <div className="text-sm ml-3">Running {osInfo.data?.osPlatform} {osInfo.data?.osRelease}</div>
+            {user.data?.username}@{hostname.data} <div className="text-sm ml-3">Running {osInfo.data?.osPlatform} {osInfo.data?.osRelease}</div>
         </h1>
         <div className="flex flex-row w-full pt-4 gap-4">
             <Item variant={"outline"}>
@@ -63,7 +69,7 @@ export default function ServerPage() {
                 </ItemMedia>
                 <ItemContent>
                     <ItemTitle>Uptime</ItemTitle>
-                    <ItemDescription>{formatSeconds(osInfo.data?.uptime)}</ItemDescription>
+                <ItemDescription>{osInfo.isError ? "Unavailable" : formatSeconds(osInfo.data?.uptime)}</ItemDescription>
                 </ItemContent>
             </Item>
             <Item variant={"outline"}>
@@ -72,7 +78,7 @@ export default function ServerPage() {
                 </ItemMedia>
                 <ItemContent>
                     <ItemTitle>CPU Temprature</ItemTitle>
-                    <ItemDescription>{osInfo.data?.sysinfoCpuTemperature.main}°C</ItemDescription>
+                <ItemDescription>{osInfo.isError ? "Unavailable" : osInfo.data?.sysinfoCpuTemperature.main ?? "Loading…"}°C</ItemDescription>
                 </ItemContent>
             </Item>
             <Item variant={"outline"}>
@@ -81,7 +87,7 @@ export default function ServerPage() {
                 </ItemMedia>
                 <ItemContent>
                     <ItemTitle>Memory Usage</ItemTitle>
-                    <ItemDescription>{convertBytes(osInfo.data?.sysinfoMem.used)}/{convertBytes(osInfo.data?.sysinfoMem.total)}</ItemDescription>
+                    <ItemDescription>{osInfo.isError ? "Unavailable" : `${convertBytes(osInfo.data?.sysinfoMem?.used)}/${convertBytes(osInfo.data?.sysinfoMem?.total)}`}</ItemDescription>
                 </ItemContent>
             </Item>
         </div>

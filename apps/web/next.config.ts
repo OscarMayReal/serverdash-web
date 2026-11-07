@@ -1,7 +1,8 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@workspace/ui"],
+  transpilePackages: ["@workspace/ui", "@workspace/backend"],
+  serverExternalPackages: ["node-linux-pam"],
   async rewrites() {
     const backendUrl = process.env.BACKEND_URL ?? "http://localhost:3001"
 

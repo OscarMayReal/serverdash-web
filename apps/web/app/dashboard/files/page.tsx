@@ -14,6 +14,7 @@ export default function FileBrowserPage() {
     const fileInput = useRef<HTMLInputElement>(null)
     const replacementTarget = useRef<string | null>(null)
     const dir = trpc.filesRouter.ls.useQuery({path: path.join("/")})
+    const currentUser = trpc.authRouter.me.useQuery()
     const trpcUtils = trpc.useUtils()
     const deleteFile = trpc.filesRouter.rm.useMutation({
         onSuccess: () => dir.refetch()
@@ -25,6 +26,10 @@ export default function FileBrowserPage() {
         onSuccess: () => dir.refetch()
     })
     const [uploading, setUploading] = useState(false)
+
+    if (dir.isPending) {
+        return <div role="status" className="p-6">Loading files…</div>
+    }
 
     const uploadSelectedFiles = async (files: FileList | null) => {
         if (!files?.length) return
@@ -64,12 +69,22 @@ export default function FileBrowserPage() {
         link.click()
         URL.revokeObjectURL(url)
     }
+    if (dir.isError) {
+        return <div role="alert" className="flex h-full flex-col gap-3 p-6">
+            <h1 className="text-lg font-medium">Could not load this directory</h1>
+            <p className="text-muted-foreground">{dir.error.message}</p>
+            <Button className="w-fit" onClick={() => dir.refetch()}>Try again</Button>
+        </div>
+    }
+
     return <div className="relative flex h-svh min-h-0 w-full flex-col overflow-hidden">
         <div className="flex flex-row absolute top-0 z-10 left-0 w-full items-center h-[60px] px-[10px] gap-3 bg-gradient-to-b from-background to-background/0">
             <DropdownMenu>
                 <DropdownMenuTrigger render={<Button variant={"ghost"} size="icon" className="h-[40px] w-[40px] rounded-full bg-muted hover:bg-neutral-200 border-1 border-border"><ListIcon /></Button>} />
                 <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => setPath(["/", "home"])}>
+                    <DropdownMenuItem disabled={!currentUser.data?.homeDirectory} onClick={() => {
+                        if (currentUser.data?.homeDirectory) setPath([currentUser.data.homeDirectory])
+                    }}>
                         <HomeIcon />Home
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setPath(["/"])}>
@@ -170,7 +185,8 @@ export default function FileBrowserPage() {
                             
                         </TableCell>
                     </TableRow>} */}
-                    {dir.data && dir.data.map(item => <TableRow key={item.file} onClick={() => {
+                    {dir.data?.length === 0 && <TableRow><TableCell colSpan={5} className="text-muted-foreground text-center">This directory is empty.</TableCell></TableRow>}
+                    {dir.data?.map(item => <TableRow key={item.file} onClick={() => {
                         if (item.isFolder) {
                             setPath([...path, item.file])
                             console.log([...path, item.file].join("/"))

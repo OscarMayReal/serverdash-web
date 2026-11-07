@@ -1,14 +1,12 @@
-import { initTRPC } from "@trpc/server"
+import { protectedProcedure as procedure, t } from "../trpc.js"
 import os from "os"
 import sysinfo from "systeminformation"
 
-const t = initTRPC.create()
-
 export const infoRouter = t.router({
-    hostname: t.procedure.query((opts) => {
+    hostname: procedure.query((opts) => {
         return os.hostname()
     }),
-    osInfo: t.procedure.query(async (opts) => {
+    osInfo: procedure.query(async (opts) => {
         const uptime = os.uptime()
         const osRelease = os.release()
         const osPlatform = os.platform()

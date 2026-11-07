@@ -7,7 +7,7 @@ import { useState } from "react"
 
 import type { AppRouter } from "@workspace/backend/router"
 
-export const trpc = createTRPCReact<AppRouter>()
+export const trpc: ReturnType<typeof createTRPCReact<AppRouter>> = createTRPCReact<AppRouter>()
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return window.location.origin
@@ -15,10 +15,14 @@ function getBaseUrl() {
 }
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient())
+  const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      links: [httpBatchLink({ url: `${getBaseUrl()}/api/trpc` })],
+      links: [httpBatchLink({
+        url: `${getBaseUrl()}/api/trpc`,
+        maxItems: 1,
+        fetch: (url, options) => fetch(url, { ...options, credentials: "include", signal: AbortSignal.timeout(15000) }),
+      })],
     }),
   )
 

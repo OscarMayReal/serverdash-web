@@ -21,7 +21,7 @@ export default function DashboardHome() {
     </div>
 }
 
-function AppItemTile({className, Icon, name}: {className?: string, Icon: React.JSX.ElementType, name}) {
+function AppItemTile({className, Icon, name}: {className?: string, Icon: React.JSX.ElementType, name: string}) {
     return <div className="bg-black">
         <div className={`w-[125px] h-[125px] ${className || "bg-primary hover:bg-primary/80"} relative`}>
             <Icon size={35} className="text-white absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%]" strokeWidth="1.5" />
