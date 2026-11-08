@@ -1,14 +1,15 @@
 "use client"
 import { trpc } from "@/trpc/client"
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@workspace/ui/components/dialog"
 import type { inferRouterOutputs } from "@trpc/server"
 import type { AppRouter } from "@workspace/backend/router"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Button } from "@workspace/ui/components/button"
-import { PlayIcon, RefreshCcwIcon, StopCircleIcon, Trash2Icon } from "lucide-react"
-import { useEffect } from "react"
+import { DownloadIcon, PlayIcon, PlusCircleIcon, RefreshCcwIcon, StopCircleIcon, Trash2Icon } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Input } from "@workspace/ui/components/input"
 
 type ContainerRowItem = inferRouterOutputs<AppRouter>["containerRouter"]["ps"][number]
 
@@ -25,6 +26,7 @@ export default function ContainersPage() {
                 </TabsTrigger>
             </TabsList>
             <ContainersTab />
+            <ImagesTab />
         </Tabs>
     </div>
 }
@@ -51,7 +53,11 @@ function ContainersTab() {
             clearInterval(interval)
         }
     }, [])
-    return <TabsContent value="containers" className="w-full">
+    return <TabsContent value="containers" className="w-full flex flex-col gap-2">
+        <Button className="w-fit">
+            <PlusCircleIcon />
+            Create Container
+        </Button>
         <Table className="w-full">
             <TableHeader>
                 <TableRow>
@@ -87,6 +93,115 @@ function ContainersTab() {
                     startContainer={startContainer}
                     rmContainer={rmContainer}
                 />)}
+            </TableBody>
+        </Table>
+    </TabsContent>
+}
+
+function ImagesTab() {
+    const [imageName, setImageName] = useState("")
+    const [downloadImageDialogOpen, setDownloadImageDialogOpen] = useState(false)
+    const [pullJobId, setPullJobId] = useState<string | null>(null)
+    const images = trpc.containerRouter.image.ls.useQuery()
+    const pull = trpc.containerRouter.image.pull.useMutation({
+        onSuccess: ({ jobId }) => setPullJobId(jobId),
+    })
+    const pullProgress = trpc.containerRouter.image.pullProgress.useQuery(
+        { jobId: pullJobId ?? "" },
+        {
+            enabled: pullJobId !== null,
+            refetchInterval: (query) => query.state.data?.status === "pulling" ? 500 : false,
+        },
+    )
+    useEffect(() => {
+        if (pullProgress.data?.status === "complete") {
+            void images.refetch()
+        }
+    }, [pullProgress.data?.status])
+    useEffect(() => {
+        const interval = setInterval(() => {
+            images.refetch()
+        }, 1000)
+        return () => {
+            clearInterval(interval)
+        }
+    }, [])
+    return <TabsContent value="images" className="w-full flex flex-col gap-2">
+        <Dialog open={downloadImageDialogOpen} onOpenChange={setDownloadImageDialogOpen}>
+            <DialogTrigger render={<Button className="w-fit">
+                <DownloadIcon />
+                Download Image
+            </Button>}/>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>
+                        Pull Image
+                    </DialogTitle>
+                    <DialogDescription>
+                        Enter the name of the image you want to pull
+                    </DialogDescription>
+                </DialogHeader>
+                <Input placeholder="e.g. ubuntu:latest" value={imageName} onChange={text => setImageName(text.target.value)} />
+                {(pull.isPending || pullProgress.data?.status === "pulling") && <div className="space-y-2" role="status" aria-live="polite">
+                    <p>{pullProgress.data?.message ?? `Downloading ${imageName}…`}</p>
+                    {pullProgress.data?.current !== undefined && pullProgress.data.total !== undefined && <>
+                        <progress
+                            className="w-full"
+                            value={pullProgress.data.current}
+                            max={pullProgress.data.total || 1}
+                            aria-label="Image download progress"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                            {Math.min(100, Math.round(pullProgress.data.current / (pullProgress.data.total || 1) * 100))}% of current layer
+                        </p>
+                    </>}
+                </div>}
+                {pullProgress.data?.status === "complete" && <p role="status">{pullProgress.data.message}</p>}
+                {pullProgress.data?.status === "error" && <p role="alert">{pullProgress.data.message}</p>}
+                {pull.error && <p role="alert">{pull.error.message}</p>}
+                <DialogFooter>
+                    <Button onClick={() => {
+                        setPullJobId(null)
+                        pull.mutate({name: imageName.trim()})
+                    }} disabled={!imageName.trim() || pull.isPending || pullProgress.data?.status === "pulling"}>
+                        <DownloadIcon />
+                        Pull
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        <Table className="w-full">
+            <TableHeader>
+                <TableRow>
+                    <TableHead>
+                        Image
+                    </TableHead>
+                    <TableHead>
+                        ID
+                    </TableHead>
+                    <TableHead>
+                        Disk Usage
+                    </TableHead>
+                    <TableHead>
+                        Content Size
+                    </TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {images.data?.map(item => <TableRow>
+                    <TableCell>
+                        {item.RepoTags}
+                    </TableCell>
+                    <TableCell>
+                        {item.Id}
+                    </TableCell>
+                    <TableCell>
+                        {item.Size}
+                    </TableCell>
+                    <TableCell>
+                        {item.VirtualSize}
+                    </TableCell>
+                </TableRow>)}
             </TableBody>
         </Table>
     </TabsContent>
