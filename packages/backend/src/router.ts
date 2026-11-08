@@ -3,6 +3,7 @@ import { infoRouter } from "./routers/info.js"
 import { authRouter } from "./routers/auth.js"
 import { t } from "./trpc.js"
 import { containerRouter } from "./routers/containers.js"
+import { terminalRouter } from "./routers/terminal.js"
 
 export const appRouter = t.router({
   greeting: t.procedure.query(() => ({
@@ -11,7 +12,8 @@ export const appRouter = t.router({
   filesRouter,
   infoRouter,
   authRouter,
-  containerRouter
+  containerRouter,
+  terminalRouter,
 })
 
 export type AppRouter = typeof appRouter

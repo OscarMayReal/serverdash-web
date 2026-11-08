@@ -29,6 +29,8 @@
         "@trpc/server": "^11.23.0",
         "@workspace/backend": "workspace:*",
         "@workspace/ui": "workspace:*",
+        "@wterm/dom": "^0.5.9",
+        "@wterm/react": "^0.5.9",
         "lucide-react": "^1.67.0",
         "next": "16.4.3",
         "next-themes": "^0.4.6",
@@ -537,6 +539,12 @@
     "@workspace/typescript-config": ["@workspace/typescript-config@workspace:packages/typescript-config"],
 
     "@workspace/ui": ["@workspace/ui@workspace:packages/ui"],
+
+    "@wterm/core": ["@wterm/core@0.5.9", "", {}, "sha512-+S5VA/CGmbU60PnN8PrE8i0hWBbzUzdrbjRYsnaioMum7alubzgRQ7IJ+SWCeymX6lKA6SfzfdkdYsNffTLA1Q=="],
+
+    "@wterm/dom": ["@wterm/dom@0.5.9", "", { "dependencies": { "@wterm/core": "0.5.9" } }, "sha512-0Ghz0FVbtr6g4Frk8F3I92H9UjCsIbhjQ1X8U+tly9oF172qDq685mrRPBeI8XZ5OIXK2bLr+/XAEYPUmxzwBA=="],
+
+    "@wterm/react": ["@wterm/react@0.5.9", "", { "peerDependencies": { "@wterm/dom": "0.5.9", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-LFai/uCjFZ+Csni6UpNFS/AiaKyS8FNe5d75ARzyWnAX8FTsmBpuZetaN2uiGJcJgJhmmRulYnF8HOPW/AOAUw=="],
 
     "abbrev": ["abbrev@1.1.1", "", {}, "sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q=="],
 

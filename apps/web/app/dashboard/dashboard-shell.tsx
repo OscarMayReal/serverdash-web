@@ -44,7 +44,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <SidebarGroupContent>
               <SidebarMenuButton isActive={pathname === "/dashboard"} onClick={() => router.push("/dashboard")}><HomeIcon />Home</SidebarMenuButton>
               <SidebarMenuButton><SettingsIcon />Admin</SidebarMenuButton>
-              <SidebarMenuButton><TerminalIcon />Terminal</SidebarMenuButton>
+              <SidebarMenuButton isActive={pathname === "/dashboard/terminal"} onClick={() => router.push("/dashboard/terminal")}><TerminalIcon />Terminal</SidebarMenuButton>
               <SidebarMenuButton isActive={pathname === "/dashboard/files"} onClick={() => router.push("/dashboard/files")}><FolderIcon />Files</SidebarMenuButton>
               <SidebarMenuButton><PlayIcon />Media</SidebarMenuButton>
               <SidebarMenuButton isActive={pathname === "/dashboard/containers"} onClick={() => router.push("/dashboard/containers")}><ContainerIcon />Containers</SidebarMenuButton>
