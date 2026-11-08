@@ -1,11 +1,6 @@
 import { protectedProcedure as procedure, t } from "../trpc.js"
-import os from "os"
-import sysinfo from "systeminformation"
-
-import Dockerode from "dockerode"
+import { dockerRequest, pullDockerImage, type DockerContainerSummary, type DockerImageSummary } from "../docker-api.js"
 import z from "zod"
-
-const docker = new Dockerode()
 
 type ImagePullProgress = {
     status: "pulling" | "complete" | "error"
@@ -18,38 +13,15 @@ const imagePullJobs = new Map<string, ImagePullProgress>()
 
 async function pullImage(jobId: string, name: string) {
     try {
-        const stream = await docker.pull(name)
-        let streamError: string | undefined
-
-        await new Promise<void>((resolve, reject) => {
-            docker.modem.followProgress(
-                stream,
-                (error: Error | null) => {
-                    if (error) {
-                        reject(error)
-                        return
-                    }
-
-                    resolve()
-                },
-                (event: { status?: string; id?: string; progress?: string; error?: string; errorDetail?: { message?: string }; progressDetail?: { current?: number; total?: number } }) => {
-                    if (event.error || event.errorDetail?.message) {
-                        streamError = event.error ?? event.errorDetail?.message
-                        return
-                    }
-
-                    const detail = event.progressDetail
-                    imagePullJobs.set(jobId, {
-                        status: "pulling",
-                        message: [event.id, event.status, event.progress].filter(Boolean).join(": ") || "Downloading image",
-                        ...(typeof detail?.current === "number" ? { current: detail.current } : {}),
-                        ...(typeof detail?.total === "number" ? { total: detail.total } : {}),
-                    })
-                },
-            )
+        await pullDockerImage(name, (event) => {
+            const detail = event.progressDetail as { current?: number; total?: number } | undefined
+            imagePullJobs.set(jobId, {
+                status: "pulling",
+                message: [event.id, event.status, event.progress].filter(Boolean).join(": ") || "Downloading image",
+                ...(typeof detail?.current === "number" ? { current: detail.current } : {}),
+                ...(typeof detail?.total === "number" ? { total: detail.total } : {}),
+            })
         })
-
-        if (streamError) throw new Error(streamError)
         imagePullJobs.set(jobId, { status: "complete", message: "Image download complete" })
     } catch (error) {
         imagePullJobs.set(jobId, {
@@ -61,33 +33,31 @@ async function pullImage(jobId: string, name: string) {
 
 export const containerRouter = t.router({
     ps: procedure.query(async (opts) => {
-        return await docker.listContainers({
-            all: true
-        })
+        return await dockerRequest<DockerContainerSummary[]>("GET", "/containers/json?all=1")
     }),
     restart: procedure
         .input(z.object({id: z.string()}))
         .mutation(async (opts) => {
-            return await docker.getContainer(opts.input.id).restart()
+            return await dockerRequest("POST", `/containers/${encodeURIComponent(opts.input.id)}/restart`)
         }),
     stop: procedure
         .input(z.object({id: z.string()}))
         .mutation(async (opts) => {
-            return await docker.getContainer(opts.input.id).stop()
+            return await dockerRequest("POST", `/containers/${encodeURIComponent(opts.input.id)}/stop`)
         }),
     start: procedure
         .input(z.object({id: z.string()}))
         .mutation(async (opts) => {
-            return await docker.getContainer(opts.input.id).start()
+            return await dockerRequest("POST", `/containers/${encodeURIComponent(opts.input.id)}/start`)
         }),
     rm: procedure
         .input(z.object({id: z.string()}))
         .mutation(async (opts) => {
-            return await docker.getContainer(opts.input.id).remove()
+            return await dockerRequest("DELETE", `/containers/${encodeURIComponent(opts.input.id)}?force=0&v=0`)
         }),
     image: t.router({
         ls: procedure.query(async (opts) => {
-            return await docker.listImages()
+            return await dockerRequest<DockerImageSummary[]>("GET", "/images/json")
         }),
         pullProgress: procedure
             .input(z.object({ jobId: z.string() }))

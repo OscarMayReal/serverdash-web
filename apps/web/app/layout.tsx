@@ -1,16 +1,7 @@
-import { Geist, Geist_Mono, Figtree } from "next/font/google"
-
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TRPCProvider } from "@/trpc/client"
 import { cn } from "@workspace/ui/lib/utils";
-
-const figtree = Figtree({subsets:['latin'],variable:'--font-sans'})
-
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-})
 
 export default function RootLayout({
   children,
@@ -21,7 +12,8 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", figtree.variable)}
+      className={cn("antialiased", "font-sans")}
+      style={{ "--font-sans": "Arial, Helvetica, sans-serif", "--font-mono": "ui-monospace, SFMono-Regular, Menlo, monospace" } as React.CSSProperties}
     >
       <body>
         <ThemeProvider>

@@ -8,10 +8,11 @@ import { useState } from "react"
 import type { AppRouter } from "@workspace/backend/router"
 
 export const trpc: ReturnType<typeof createTRPCReact<AppRouter>> = createTRPCReact<AppRouter>()
+let logoutRedirectStarted = false
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return window.location.origin
-  return process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000"
+  return "http://localhost:3000"
 }
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,15 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       links: [httpBatchLink({
         url: `${getBaseUrl()}/api/trpc`,
         maxItems: 1,
-        fetch: (url, options) => fetch(url, { ...options, credentials: "include", signal: AbortSignal.timeout(15000) }),
+        fetch: async (url, options) => {
+          const response = await fetch(url, { ...options, credentials: "include", signal: AbortSignal.timeout(15000) })
+          if (response.status === 401 && typeof window !== "undefined" && window.location.pathname !== "/login" && !logoutRedirectStarted) {
+            logoutRedirectStarted = true
+            void fetch("/api/auth/logout", { method: "POST", credentials: "include" })
+              .finally(() => window.location.replace("/login"))
+          }
+          return response
+        },
       })],
     }),
   )

@@ -3,7 +3,7 @@ import { createHTTPServer } from "@trpc/server/adapters/standalone"
 import { appRouter } from "./router.js"
 import { sessionCookieName, verifySessionToken } from "./auth.js"
 
-const port = Number(process.env.PORT ?? 3001)
+const port = Number(process.env.BACKEND_PORT ?? 3001)
 
 const server = createHTTPServer({
   basePath: "/api/trpc",
@@ -15,6 +15,6 @@ const server = createHTTPServer({
   },
 })
 
-server.listen(port)
+server.listen(port, "127.0.0.1")
 
 console.info(`tRPC backend listening on http://localhost:${port}/api/trpc`)

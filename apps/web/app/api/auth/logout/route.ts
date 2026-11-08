@@ -1,8 +1,9 @@
 import { sessionCookieName } from "@workspace/backend/auth"
+import { expiredSessionCookie } from "@/lib/session-cookie"
 
-export async function POST() {
+export async function POST(request: Request) {
   return new Response(null, {
     status: 204,
-    headers: { "Set-Cookie": `${sessionCookieName}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0` },
+    headers: { "Set-Cookie": expiredSessionCookie(request, sessionCookieName) },
   })
 }

@@ -16,6 +16,7 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
+    "build:binary": "bun run scripts/build-binary.ts",
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",

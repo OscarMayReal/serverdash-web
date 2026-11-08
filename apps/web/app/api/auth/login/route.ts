@@ -1,5 +1,6 @@
 import { pamAuthenticatePromise } from "node-linux-pam"
 import { createSessionToken, sessionCookieName, sessionTtlSeconds } from "@workspace/backend/auth"
+import { requestUsesHttps } from "@/lib/session-cookie"
 
 export const runtime = "nodejs"
 
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
       { success: true },
       {
         headers: {
-          "Set-Cookie": `${sessionCookieName}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${sessionTtlSeconds}${process.env.NODE_ENV === "production" ? "; Secure" : ""}`,
+          "Set-Cookie": `${sessionCookieName}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${sessionTtlSeconds}${requestUsesHttps(request) ? "; Secure" : ""}`,
           "Cache-Control": "no-store",
         },
       },
