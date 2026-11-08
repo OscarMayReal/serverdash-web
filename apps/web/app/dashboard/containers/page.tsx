@@ -10,6 +10,8 @@ import { Button } from "@workspace/ui/components/button"
 import { DownloadIcon, PlayIcon, PlusCircleIcon, RefreshCcwIcon, StopCircleIcon, Trash2Icon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Input } from "@workspace/ui/components/input"
+import { Field, FieldContent, FieldSet, FieldTitle } from "@workspace/ui/components/field"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
 
 type ContainerRowItem = inferRouterOutputs<AppRouter>["containerRouter"]["ps"][number]
 
@@ -32,6 +34,14 @@ export default function ContainersPage() {
 }
 
 function ContainersTab() {
+    const [createOpen, setCreateOpen] = useState(false)
+    const [name, setName] = useState("")
+    const [image, setImage] = useState("")
+    const [command, setCommand] = useState("")
+    const [ports, setPorts] = useState("")
+    const [mounts, setMounts] = useState("")
+    const [env, setEnv] = useState("")
+    const [createValidationError, setCreateValidationError] = useState("")
     const containers = trpc.containerRouter.ps.useQuery()
     const stopContainer = trpc.containerRouter.stop.useMutation({
         onSuccess: () => containers.refetch()
@@ -45,6 +55,19 @@ function ContainersTab() {
     const rmContainer = trpc.containerRouter.rm.useMutation({
         onSuccess: () => containers.refetch()
     })
+    const images = trpc.containerRouter.image.ls.useQuery()
+    const createContainer = trpc.containerRouter.create.useMutation({
+        onSuccess: async () => {
+            setCreateOpen(false)
+            await containers.refetch()
+            setName("")
+            setImage("")
+            setCommand("")
+            setPorts("")
+            setMounts("")
+            setEnv("")
+        },
+    })
     useEffect(() => {
         const interval = setInterval(() => {
             containers.refetch()
@@ -54,10 +77,70 @@ function ContainersTab() {
         }
     }, [])
     return <TabsContent value="containers" className="w-full flex flex-col gap-2">
-        <Button className="w-fit">
-            <PlusCircleIcon />
-            Create Container
-        </Button>
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger render={<Button className="w-fit">
+                <PlusCircleIcon />
+                Create Container
+            </Button>} />
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>
+                        Create Container
+                    </DialogTitle>
+                </DialogHeader>
+                <FieldSet>
+                    <Field>
+                        <FieldTitle>Container Name</FieldTitle>
+                        <FieldContent><Input placeholder="my-container" value={name} onChange={event => setName(event.target.value)} /></FieldContent>
+                    </Field>
+                    <Field>
+                        <FieldTitle>Image</FieldTitle>
+                        <FieldContent>
+                            <Select value={image} onValueChange={value => setImage(value ?? "")}>
+                                <SelectTrigger className={"w-full"}>
+                                    <SelectValue placeholder="Select Image" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        {images.data?.flatMap(item => item.RepoTags ?? []).map(tag => <SelectItem key={tag} value={tag}>
+                                            {tag}
+                                        </SelectItem>)}
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                        </FieldContent>
+                    </Field>
+                    <Field><FieldTitle>Command (optional)</FieldTitle><FieldContent><Input placeholder="python -m http.server" value={command} onChange={event => setCommand(event.target.value)} /></FieldContent></Field>
+                    <Field><FieldTitle>Port mappings</FieldTitle><FieldContent><textarea className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]" placeholder={"8080:80\n127.0.0.1:8443:443/udp"} value={ports} onChange={event => setPorts(event.target.value)} /><p className="text-muted-foreground text-xs">One mapping per line: host:container[/tcp|udp], optionally bind to an IP.</p></FieldContent></Field>
+                    <Field><FieldTitle>Storage mappings</FieldTitle><FieldContent><textarea className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]" placeholder={"/host/path:/container/path\nmy-volume:/data:ro"} value={mounts} onChange={event => setMounts(event.target.value)} /><p className="text-muted-foreground text-xs">One Docker bind or named volume per line: source:container-path[:ro].</p></FieldContent></Field>
+                    <Field><FieldTitle>Environment variables</FieldTitle><FieldContent><textarea className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]" placeholder={"NODE_ENV=production\nAPP_PORT=3000"} value={env} onChange={event => setEnv(event.target.value)} /><p className="text-muted-foreground text-xs">One KEY=value entry per line.</p></FieldContent></Field>
+                    {(createValidationError || createContainer.error?.message) && <p role="alert" className="text-destructive text-sm">{createValidationError || createContainer.error?.message}</p>}
+                </FieldSet>
+                <DialogFooter>
+                    <Button onClick={() => {
+                        try {
+                            setCreateValidationError("")
+                            const parsedPorts = ports.split("\n").map(line => line.trim()).filter(Boolean).map(line => {
+                                const match = line.match(/^(?:(\d{1,3}(?:\.\d{1,3}){3}):)?(\d{1,5}):(\d{1,5})(?:\/(tcp|udp))?$/)
+                                if (!match) throw new Error(`Invalid port mapping: ${line}`)
+                                return { hostIp: match[1], host: match[2]!, container: match[3]!, protocol: (match[4] ?? "tcp") as "tcp" | "udp" }
+                            })
+                            createContainer.mutate({
+                                name: name.trim(), image,
+                                command: command.trim() ? command.trim().split(/\s+/) : [],
+                                ports: parsedPorts,
+                                mounts: mounts.split("\n").map(line => line.trim()).filter(Boolean),
+                                env: env.split("\n").map(line => line.trim()).filter(Boolean),
+                            })
+                        } catch (error) {
+                            setCreateValidationError(error instanceof Error ? error.message : "Check the container settings")
+                        }
+                    }} disabled={!name.trim() || !image || createContainer.isPending}>
+                        <PlusCircleIcon />{createContainer.isPending ? "Creating…" : "Create and Start"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
         <Table className="w-full">
             <TableHeader>
                 <TableRow>

@@ -49,6 +49,42 @@ export function dockerRequest<T = unknown>(method: string, path: string): Promis
   })
 }
 
+export type DockerContainerConfig = {
+  Image: string
+  Cmd?: string[]
+  Env?: string[]
+  ExposedPorts?: Record<string, Record<string, never>>
+  HostConfig?: {
+    PortBindings?: Record<string, Array<{ HostPort: string; HostIp?: string }>>
+    Binds?: string[]
+  }
+}
+
+export function createDockerContainer(name: string, config: DockerContainerConfig): Promise<{ Id: string }> {
+  return new Promise((resolve, reject) => {
+    const path = `/containers/create?name=${encodeURIComponent(name)}`
+    const request = httpRequest({ socketPath, path, method: "POST", headers: { "content-type": "application/json" } }, (response) => {
+      let body = ""
+      response.setEncoding("utf8")
+      response.on("data", (chunk: string) => { body += chunk })
+      response.on("end", () => {
+        let payload: { Id?: string; message?: string }
+        try {
+          payload = JSON.parse(body) as typeof payload
+        } catch {
+          reject(new Error(`Docker API returned ${response.statusCode}`))
+          return
+        }
+        if ((response.statusCode ?? 500) >= 400) return reject(new Error(payload.message ?? `Docker API returned ${response.statusCode}`))
+        if (!payload.Id) return reject(new Error("Docker did not return a container ID"))
+        resolve({ Id: payload.Id })
+      })
+    })
+    request.on("error", reject)
+    request.end(JSON.stringify(config))
+  })
+}
+
 export async function pullDockerImage(name: string, onEvent: (event: Record<string, unknown>) => void) {
   const path = `/images/create?fromImage=${encodeURIComponent(name)}`
   await new Promise<void>((resolve, reject) => {

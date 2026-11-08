@@ -1,6 +1,18 @@
 # ServerDash
 A web dashboard for managing and accessing a Linux server.
 
+## What is it?
+
+It can manage docker containers, server files, or let you remotely access a shell. it works like cockpit or webmin, but has less features
+
+## Dashboard preview
+
+![ServerDash file manager showing the server navigation and file list](docs/images/serverdash-file-manager.png)
+
+## Setting up
+
+just chmod +x the executable, and run it. you should have docker on your computer, because this can control it
+
 ## Build a single-file server executable
 
 Build the Linux x64 executable with Bun 1.4.3:

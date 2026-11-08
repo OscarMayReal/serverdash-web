@@ -2,6 +2,15 @@ import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TRPCProvider } from "@/trpc/client"
 import { cn } from "@workspace/ui/lib/utils";
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: {
+    default: "ServerDash — Linux Server Dashboard",
+    template: "%s | ServerDash",
+  },
+  description: "A web dashboard for managing and accessing a Linux server.",
+}
 
 export default function RootLayout({
   children,
