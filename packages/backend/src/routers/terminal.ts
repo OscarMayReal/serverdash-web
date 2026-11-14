@@ -91,7 +91,6 @@ export const terminalRouter = t.router({
         TERM: "xterm-256color",
       },
       ...(process.getuid?.() === 0 ? { uid, gid } : {}),
-      detached: true,
       terminal,
     })
     const session: TerminalSession = { username, process: subprocess, terminal, output, lastActivity: Date.now(), closed: false }
