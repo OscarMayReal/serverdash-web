@@ -11,7 +11,9 @@ It can manage docker containers, server files, or let you remotely access a shel
 
 ## Setting up
 
-just chmod +x the executable, and run it. you should have docker on your computer, because this can control it
+download the executable from https://github.com/OscarMayReal/serverdash-web/releases/tag/1.0.2
+
+just chmod +x the executable, and run it. you should have docker set up on your computer, because this can control it
 
 ## Build a single-file server executable
 
